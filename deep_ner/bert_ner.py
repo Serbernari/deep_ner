@@ -21,10 +21,24 @@ from .udpipe_data import UNIVERSAL_DEPENDENCIES, UNIVERSAL_POS_TAGS, create_udpi
 
 
 tf.logging.set_verbosity(tf.logging.ERROR)
-
+import sys
 
 bert_ner_logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stdout)
+bert_ner_logger.addHandler(handler)
 
+#magic from https://stackoverflow.com/questions/54001004/why-am-i-receive-alreadyexistserror
+from tensorflow.core.protobuf import rewriter_config_pb2
+from tensorflow.keras.backend import set_session
+import tensorflow as tf
+
+tf.keras.backend.clear_session()  # For easy reset of notebook state.
+
+config_proto = tf.ConfigProto()
+off = rewriter_config_pb2.RewriterConfig.OFF
+config_proto.graph_options.rewrite_options.arithmetic_optimization = off
+session = tf.Session(config=config_proto)
+set_session(session)
 
 class BERT_NER(BaseEstimator, ClassifierMixin):
     PATH_TO_BERT = None
@@ -110,6 +124,7 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
             X_val_ = validation_data[0]
             y_val_ = validation_data[1]
         self.tokenizer_ = self.initialize_bert_tokenizer()
+        print("tokenizer ready")
         X_train_tokenized, y_train_tokenized, self.shapes_list_, bounds_of_tokens_for_training = self.tokenize_all(
             X_train_, y_train_)
         if self.verbose:
@@ -170,6 +185,7 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                     y_batch = y_train_tokenized[cur_batch[0]:cur_batch[1]]
                     feed_dict_for_batch = self.fill_feed_dict(X_batch, y_batch)
                     self.sess_.run(train_op, feed_dict=feed_dict_for_batch)
+
                 acc_train = log_likelihood.eval(feed_dict=feed_dict_for_batch, session=self.sess_)
                 if bounds_of_batches_for_validation is not None:
                     acc_test = 0.0
@@ -713,6 +729,12 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
             config = tf.ConfigProto()
             config.gpu_options.per_process_gpu_memory_fraction = self.gpu_memory_frac
             config.gpu_options.allow_growth = True
+
+
+            config = tf.ConfigProto()
+            off = rewriter_config_pb2.RewriterConfig.OFF
+            config.graph_options.rewrite_options.memory_optimization  = off
+
             self.sess_ = tf.Session(config=config)
             bert_module = tfhub.Module(self.bert_hub_module_handle, trainable=True)
             tokenization_info = bert_module(signature='tokenization_info', as_dict=True)
@@ -754,6 +776,11 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = self.gpu_memory_frac
         config.gpu_options.allow_growth = True
+
+        config = tf.ConfigProto()
+        off = rewriter_config_pb2.RewriterConfig.OFF
+        config.graph_options.rewrite_options.memory_optimization  = off
+
         self.sess_ = tf.Session(config=config)
         input_ids = tf.placeholder(shape=(self.batch_size, self.max_seq_length), dtype=tf.int32,
                                    name='input_ids')
@@ -885,6 +912,11 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
             config = tf.ConfigProto()
             config.gpu_options.per_process_gpu_memory_fraction = self.gpu_memory_frac
             config.gpu_options.allow_growth = True
+
+            config = tf.ConfigProto()
+            off = rewriter_config_pb2.RewriterConfig.OFF
+            config.graph_options.rewrite_options.memory_optimization  = off
+
             self.sess_ = tf.Session(config=config)
         saver = tf.train.import_meta_graph(file_name + '.meta', clear_devices=True)
         saver.restore(self.sess_, file_name)
