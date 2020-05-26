@@ -125,8 +125,11 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
             y_val_ = validation_data[1]
         self.tokenizer_ = self.initialize_bert_tokenizer()
         print("tokenizer ready")
+        shapes_vocabulary = list() # TODO this is custom vicab_size hotfix
+        shapes_vocabulary.append(119547) # TODO this is custom vicab_size hotfix
+        shapes_vocabulary += ['[CLS]', '[SEP]', '[UNK]'] # TODO this is custom vicab_size hotfix
         X_train_tokenized, y_train_tokenized, self.shapes_list_, bounds_of_tokens_for_training = self.tokenize_all(
-            X_train_, y_train_)
+            X_train_, y_train_, shapes_vocabulary=shapes_vocabulary)
         if self.verbose:
             lengths_of_texts = []
             sum_of_lengths = 0
