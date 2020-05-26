@@ -54,7 +54,7 @@ ner = BERT_NER(bert_hub_module_handle='https://tfhub.dev/google/bert_multi_cased
                validation_fraction=0.0)  # create new named entity recognizer for English language with BERT and additional features
 ```
 
-If you want to use some special finetuned BERT, located on your disk, then you have to set path to the BERT directory in special variable (a Python class attribute) `BERT_NER.PATH_TO_BERT`. For example:
+If you want to use some special finetuned BERT, located on your disk, then you have to set path to the BERT directory in special variable (a Python class attribute) `BERT_NER.PATH_TO_BERT` and set `bert_hub_module_handle = None`. For example:
 
 ```
 from deep_ner.bert_ner import BERT_NER  # import the BERT-NER module

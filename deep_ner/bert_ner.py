@@ -963,7 +963,7 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
         return sorted(model_files)
 
     @staticmethod
-    def check_path_to_bert(dir_name: str) -> bool:
+    def check_path_to_bert(dir_name: str) -> bool: # TODO Проверяет только названия файлов слишком придирчиво, вплоть до номера чекпоинта
         if not os.path.isdir(dir_name):
             return False
         if not os.path.isfile(os.path.join(dir_name, 'vocab.txt')):
