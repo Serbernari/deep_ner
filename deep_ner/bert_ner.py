@@ -135,6 +135,10 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                 sum_of_lengths += lengths_of_texts[-1]
             mean_length = sum_of_lengths / float(len(lengths_of_texts))
             lengths_of_texts.sort()
+            print('Maximal length of text (in BPE): {0}'.format(max(lengths_of_texts)))
+            print('Mean length of text (in BPE): {0}'.format(mean_length))
+            print('Median length of text (in BPE): {0}'.format(
+                lengths_of_texts[len(lengths_of_texts) // 2]))
             bert_ner_logger.info('Maximal length of text (in BPE): {0}'.format(max(lengths_of_texts)))
             bert_ner_logger.info('Mean length of text (in BPE): {0}'.format(mean_length))
             bert_ner_logger.info('Median length of text (in BPE): {0}'.format(
@@ -172,6 +176,7 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
         tmp_model_name = self.get_temp_model_name()
         if self.verbose:
             if X_val_tokenized is None:
+                print('Epoch   Log-likelihood')
                 bert_ner_logger.info('Epoch   Log-likelihood')
         n_epochs_without_improving = 0
         try:
@@ -207,6 +212,9 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                             y_pred += [viterbi_seq]
                     acc_test /= float(X_val_tokenized[0].shape[0])
                     if self.verbose:
+                        print('Epoch {0}'.format(epoch))
+                        print('  Train log-likelihood: {0: 10.8f}'.format(acc_train))
+                        print('  Val. log-likelihood:  {0: 10.8f}'.format(acc_test))
                         bert_ner_logger.info('Epoch {0}'.format(epoch))
                         bert_ner_logger.info('  Train log-likelihood: {0: 10.8f}'.format(acc_train))
                         bert_ner_logger.info('  Val. log-likelihood:  {0: 10.8f}'.format(acc_test))
@@ -232,6 +240,9 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                     else:
                         n_epochs_without_improving += 1
                     if self.verbose:
+                        print('  Val. quality for all entities:')
+                        print('      F1={0:>6.4f}, P={1:>6.4f}, R={2:>6.4f}'.format(
+                            f1_test, precision_test, recall_test))
                         bert_ner_logger.info('  Val. quality for all entities:')
                         bert_ner_logger.info('      F1={0:>6.4f}, P={1:>6.4f}, R={2:>6.4f}'.format(
                             f1_test, precision_test, recall_test))
@@ -241,6 +252,10 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                             if text_width > max_text_width:
                                 max_text_width = text_width
                         for ne_type in sorted(list(quality_by_entities.keys())):
+                            print('    Val. quality for {0:>{1}}:'.format(ne_type, max_text_width))
+                            print('      F1={0:>6.4f}, P={1:>6.4f}, R={2:>6.4f})'.format(
+                                quality_by_entities[ne_type][0], quality_by_entities[ne_type][1],
+                                quality_by_entities[ne_type][2]))
                             bert_ner_logger.info('    Val. quality for {0:>{1}}:'.format(ne_type, max_text_width))
                             bert_ner_logger.info('      F1={0:>6.4f}, P={1:>6.4f}, R={2:>6.4f})'.format(
                                 quality_by_entities[ne_type][0], quality_by_entities[ne_type][1],
@@ -258,9 +273,11 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                     else:
                         n_epochs_without_improving += 1
                     if self.verbose:
+                        print('{0:>5}   {1:>14.8f}'.format(epoch, acc_train))
                         bert_ner_logger.info('{0:>5}   {1:>14.8f}'.format(epoch, acc_train))
                 if n_epochs_without_improving >= self.patience:
                     if self.verbose:
+                        print('Epoch %05d: early stopping' % (epoch + 1))
                         bert_ner_logger.info('Epoch %05d: early stopping' % (epoch + 1))
                     break
             if best_acc is not None:
@@ -296,6 +313,8 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                         pred_entities_val.append(new_entities)
                     f1_test, _, _, _ = calculate_prediction_quality(y_val_, pred_entities_val,
                                                                     self.classes_list_)
+                    print('Best val. F1 is {0:>8.6f}'.format(f1_test))
+                    print('Best val. log-likelihood is {0:>10.8f}'.format(acc_test))
                     bert_ner_logger.info('Best val. F1 is {0:>8.6f}'.format(f1_test))
                     bert_ner_logger.info('Best val. log-likelihood is {0:>10.8f}'.format(acc_test))
         finally:
@@ -768,6 +787,8 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                                  'cannot be detected.'.format(path_to_bert))
             tokenizer_ = FullTokenizer(vocab_file=os.path.join(path_to_bert, 'vocab.txt'), do_lower_case=do_lower_case)
             if self.verbose:
+                print('The BERT tokenizer has been loaded from a local drive. '
+                                     '`do_lower_case` is {0}.'.format(do_lower_case))
                 bert_ner_logger.info('The BERT tokenizer has been loaded from a local drive. '
                                      '`do_lower_case` is {0}.'.format(do_lower_case))
         return tokenizer_
@@ -799,6 +820,7 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
             bert_outputs = bert_module(bert_inputs, signature='tokens', as_dict=True)
             sequence_output = bert_outputs['sequence_output']
             if self.verbose:
+                print('The BERT model has been loaded from the TF-Hub.')
                 bert_ner_logger.info('The BERT model has been loaded from the TF-Hub.')
         else:
             if self.PATH_TO_BERT is None:
@@ -817,6 +839,7 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
             (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
             tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
             if self.verbose:
+                print('The BERT model has been loaded from a local drive.')
                 bert_ner_logger.info('The BERT model has been loaded from a local drive.')
         if self.use_additional_features:
             additional_features = tf.placeholder(
@@ -825,6 +848,7 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                 name='additional_features'
             )
             if self.verbose:
+                print('Number of shapes is {0}.'.format(len(self.shapes_list_)))
                 bert_ner_logger.info('Number of shapes is {0}.'.format(len(self.shapes_list_)))
         else:
             additional_features = None
