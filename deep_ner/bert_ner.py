@@ -832,14 +832,23 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
             if not self.check_path_to_bert(path_to_bert):
                 raise ValueError('`path_to_bert` is wrong! There are no BERT files into the directory `{0}`.'.format(
                     self.PATH_TO_BERT))
+
             bert_config = BertConfig.from_json_file(os.path.join(path_to_bert, 'bert_config.json'))
-            bert_model = BertModel(config=bert_config, is_training=self.finetune_bert, input_ids=input_ids,
-                                   input_mask=input_mask, token_type_ids=segment_ids,
-                                   use_one_hot_embeddings=False)
+
+            bert_model = BertModel(config=bert_config, \
+                                    is_training=self.finetune_bert,\
+                                    input_ids=input_ids,\
+                                    input_mask=input_mask,\
+                                    token_type_ids=segment_ids,\
+                                    use_one_hot_embeddings=True,\
+                                    use_tpu = True) #TODO - сделать нормальную передачу параметров.
+
             sequence_output = bert_model.sequence_output
             tvars = tf.trainable_variables()
+
             init_checkpoint = os.path.join(self.PATH_TO_BERT, 'bert_model.ckpt')
             (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
+            
             tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
             if self.verbose:
                 print('The BERT model has been loaded from a local drive.')
