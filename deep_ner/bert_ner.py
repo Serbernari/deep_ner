@@ -841,7 +841,7 @@ class BERT_NER(BaseEstimator, ClassifierMixin):
                                     input_mask=input_mask,\
                                     token_type_ids=segment_ids,\
                                     use_one_hot_embeddings=True,\
-                                    use_tpu = True) #TODO - сделать нормальную передачу параметров.
+                                    ) #TODO - сделать нормальную передачу параметров.
 
             sequence_output = bert_model.sequence_output
             tvars = tf.trainable_variables()
